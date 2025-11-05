@@ -38,6 +38,7 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
 .unidade-linha{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
 .unidade-linha input{flex:1;}
 .unidade-linha button{padding:6px 10px;}
+#popup-unidades .popup-content button{width:100%;margin-bottom:6px;}
 </style>
 </head>
 <body>
@@ -112,23 +113,31 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
     <label>Fornecedor</label>
     <select id="fornecedor"></select>
 
+    <label>Unidades e Valores</label>
     <div id="unidadesContainer">
-      <label>Unidades e Valores</label>
       <div class="unidade-linha">
         <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid">
         <input placeholder="Valor (R$)" class="valor" oninput="mascaraValor(this)">
         <button class="btn-blue" onclick="adicionarLinha()">+</button>
       </div>
     </div>
-
     <button class="btn-green" onclick="salvarItem()">Salvar Item</button>
+  </div>
+</div>
+
+<!-- POPUP UNIDADES (para escolher na cotação) -->
+<div class="popup" id="popup-unidades">
+  <div class="popup-content">
+    <span class="close" onclick="fecharPopup('unidades')">✖</span>
+    <h3>Escolha a Unidade</h3>
+    <div id="listaUnidades"></div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const URL = "https://script.google.com/macros/s/AKfycbxAHXb_CVMyepJym0FJXX_tPY_zX3S79iLuj4sMFn0JstO4BAFOeDqkDXYIIQGioEBoFQ/exec";
-let fornecedores=[], todosItens=[], cotacaoItens=[];
+let fornecedores=[], todosItens=[], cotacaoItens=[], unidadesTemp=[];
 
 /* POPUPS */
 function abrirPopup(t){document.getElementById(`popup-${t}`).style.display='flex';}
@@ -147,7 +156,7 @@ function setModalidade(v){
 /* MÁSCARAS */
 function mascaraValor(el){
   let v=el.value.replace(/\D/g,"");
-  v=(v/100).toFixed(2)+''; 
+  v=(v/100).toFixed(2)+'';
   v=v.replace(".",",");
   v=v.replace(/(\d)(?=(\d{3})+(?!\d))/g,"$1.");
   el.value="R$ "+v;
@@ -209,13 +218,29 @@ function renderItens(lista){
     <h4>${i.item}</h4>
     <small>Fornecedor: ${i.fornecedor}</small><br>
     <b>${i.quantidade} ${i.unidade}</b> — <b>R$${parseFloat(i.valor).toFixed(2).replace('.',',')}</b><br>
-    <button class="btn-green" onclick='selecionarItem(${i.id})'>Selecionar</button>
+    <button class="btn-green" onclick='abrirUnidades("${i.item}")'>Selecionar</button>
   </div>`).join("");
 }
 function filtrarItens(){
   const termo=document.getElementById("pesquisa").value.toUpperCase();
   const filtrado=todosItens.filter(i=>i.item.toUpperCase().includes(termo));
   renderItens(filtrado);
+}
+
+/* POPUP DE UNIDADES PARA SELECIONAR */
+function abrirUnidades(produto){
+  unidadesTemp=todosItens.filter(i=>i.item===produto);
+  const div=document.getElementById("listaUnidades");
+  div.innerHTML=unidadesTemp.map(u=>
+    `<button class="btn-blue" onclick='selecionarUnidade(${u.id})'>
+      ${u.unidade} — R$ ${parseFloat(u.valor).toFixed(2).replace('.',',')} (${u.fornecedor})
+    </button>`).join("");
+  abrirPopup('unidades');
+}
+function selecionarUnidade(id){
+  const u=todosItens.find(x=>x.id===id);
+  if(u) cotacaoItens.push(u);
+  fecharPopup('unidades');
 }
 
 /* SALVAR ITEM */
@@ -233,17 +258,6 @@ async function salvarItem(){
   alert("Item cadastrado!");
   fecharPopup('item');
   listarItens();
-}
-
-/* COTAÇÃO */
-function selecionarItem(id){
-  const item=todosItens.find(i=>i.id===id);
-  const unidades=todosItens.filter(x=>x.item===item.item);
-  const opcoes=unidades.map(u=>`${u.unidade} - R$${u.valor}`).join("\\n");
-  const escolha=prompt(`Escolha a unidade:\n${opcoes}`);
-  if(!escolha)return;
-  const unid=unidades.find(u=>escolha.includes(u.unidade));
-  if(unid)cotacaoItens.push(unid);
 }
 
 /* PDF */
