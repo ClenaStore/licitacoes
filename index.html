@@ -26,18 +26,18 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
 .btn-green{background:var(--green);color:var(--white);}
 .btn-blue{background:var(--blue);color:var(--white);}
 .btn-black{background:var(--black);color:var(--white);}
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{border:1px solid #ddd;padding:10px;text-align:left;}
-th{background:var(--blue);color:var(--white);}
 .popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;}
 .popup-content{background:var(--white);padding:20px;border-radius:var(--radius);width:90%;max-width:600px;max-height:90%;overflow:auto;}
 .close{float:right;font-weight:bold;color:var(--blue);cursor:pointer;}
 .item-card{background:#fff;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
 .item-card h4{margin:0 0 4px 0;}
+.relative{position:relative;}
 .modalidades-menu{position:absolute;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.15);padding:8px;border-radius:var(--radius);display:none;z-index:10;width:calc(100% - 20px);}
 .modalidades-menu button{display:block;width:100%;background:none;border:none;text-align:left;padding:8px;border-radius:8px;cursor:pointer;}
 .modalidades-menu button:hover{background:var(--blue);color:var(--white);}
-.relative{position:relative;}
+.unidade-linha{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+.unidade-linha input{flex:1;}
+.unidade-linha button{padding:6px 10px;}
 </style>
 </head>
 <body>
@@ -53,11 +53,11 @@ th{background:var(--blue);color:var(--white);}
   <div class="card">
     <h3>Nova Cotação</h3>
 
-    <label for="nomeCotacao">Nome da Cotação</label>
+    <label>Nome da Cotação</label>
     <input id="nomeCotacao" placeholder="Ex: Cotação Mercearia Junho">
 
     <div class="relative">
-      <label for="modalidade">Modalidade</label>
+      <label>Modalidade</label>
       <input id="modalidade" placeholder="Selecione a Modalidade" readonly onclick="abrirMenuModalidade()">
       <div class="modalidades-menu" id="menuModalidades">
         <button onclick="setModalidade('Pregão Eletrônico')">Pregão Eletrônico</button>
@@ -69,17 +69,17 @@ th{background:var(--blue);color:var(--white);}
       </div>
     </div>
 
-    <label for="local">Local</label>
+    <label>Local</label>
     <input id="local" placeholder="Ex: Barreiras - BA">
 
-    <label for="orgao">Instituição / Órgão</label>
+    <label>Instituição / Órgão</label>
     <input id="orgao" placeholder="Ex: Prefeitura de Barreiras">
 
-    <label for="dataFinal">Data Final</label>
+    <label>Data Final</label>
     <input id="dataFinal" type="datetime-local">
 
     <hr>
-    <label for="pesquisa">Pesquisar Item</label>
+    <label>Pesquisar Item</label>
     <input id="pesquisa" placeholder="Digite o nome do item..." oninput="filtrarItens()">
     <div id="listaItens"></div>
 
@@ -92,7 +92,7 @@ th{background:var(--blue);color:var(--white);}
   <div class="popup-content">
     <span class="close" onclick="fecharPopup('fornecedor')">✖</span>
     <h3>Novo Fornecedor</h3>
-    <label>Nome do Fornecedor</label>
+    <label>Nome</label>
     <input id="nomeF" placeholder="Ex: MERCATTO DELÍCIA">
     <label>CPF / CNPJ</label>
     <input id="cnpjF" placeholder="00.000.000/0000-00" maxlength="18">
@@ -111,13 +111,17 @@ th{background:var(--blue);color:var(--white);}
     <input id="produto" placeholder="Ex: ARROZ 5KG">
     <label>Fornecedor</label>
     <select id="fornecedor"></select>
-    <label>Quantidade</label>
-    <input id="quantidade" type="number" placeholder="Ex: 10">
-    <label>Unidade de Medida</label>
-    <input id="unidade" placeholder="Ex: CX, PC, KG">
-    <label>Valor (R$)</label>
-    <input id="valor" type="number" step="0.01" placeholder="Ex: 59.90">
-    <button class="btn-blue" onclick="salvarItem()">Salvar Item</button>
+
+    <div id="unidadesContainer">
+      <label>Unidades e Valores</label>
+      <div class="unidade-linha">
+        <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid">
+        <input placeholder="Valor (R$)" class="valor" oninput="mascaraValor(this)">
+        <button class="btn-blue" onclick="adicionarLinha()">+</button>
+      </div>
+    </div>
+
+    <button class="btn-green" onclick="salvarItem()">Salvar Item</button>
   </div>
 </div>
 
@@ -133,7 +137,7 @@ function fecharPopup(t){document.getElementById(`popup-${t}`).style.display='non
 /* MENU MODALIDADE */
 function abrirMenuModalidade(){
   const menu=document.getElementById("menuModalidades");
-  menu.style.display = menu.style.display==="block"?"none":"block";
+  menu.style.display=menu.style.display==="block"?"none":"block";
 }
 function setModalidade(v){
   document.getElementById("modalidade").value=v;
@@ -141,6 +145,13 @@ function setModalidade(v){
 }
 
 /* MÁSCARAS */
+function mascaraValor(el){
+  let v=el.value.replace(/\D/g,"");
+  v=(v/100).toFixed(2)+''; 
+  v=v.replace(".",",");
+  v=v.replace(/(\d)(?=(\d{3})+(?!\d))/g,"$1.");
+  el.value="R$ "+v;
+}
 document.addEventListener("input", e=>{
   if(e.target.id==="cnpjF"){
     let v=e.target.value.replace(/\D/g,"");
@@ -152,6 +163,18 @@ document.addEventListener("input", e=>{
     e.target.value=v.replace(/(\d{2})(\d{5})(\d{4})/,"($1) $2-$3");
   }
 });
+
+/* ADICIONAR LINHAS DE UNIDADE */
+function adicionarLinha(){
+  const cont=document.getElementById("unidadesContainer");
+  const div=document.createElement("div");
+  div.className="unidade-linha";
+  div.innerHTML=`
+    <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid">
+    <input placeholder="Valor (R$)" class="valor" oninput="mascaraValor(this)">
+    <button class="btn-red" onclick="this.parentElement.remove()">-</button>`;
+  cont.appendChild(div);
+}
 
 /* FORNECEDORES */
 async function carregarFornecedores(){
@@ -185,7 +208,8 @@ function renderItens(lista){
   <div class="item-card">
     <h4>${i.item}</h4>
     <small>Fornecedor: ${i.fornecedor}</small><br>
-    <small>${i.quantidade} ${i.unidade} — <b>R$${parseFloat(i.valor).toFixed(2)}</b></small>
+    <b>${i.quantidade} ${i.unidade}</b> — <b>R$${parseFloat(i.valor).toFixed(2).replace('.',',')}</b><br>
+    <button class="btn-green" onclick='selecionarItem(${i.id})'>Selecionar</button>
   </div>`).join("");
 }
 function filtrarItens(){
@@ -196,17 +220,30 @@ function filtrarItens(){
 
 /* SALVAR ITEM */
 async function salvarItem(){
-  const item=document.getElementById('produto').value;
-  const fornecedor=document.getElementById('fornecedor').value;
-  const quantidade=document.getElementById('quantidade').value;
-  const unidade=document.getElementById('unidade').value;
-  const valor=document.getElementById('valor').value;
-  if(!item||!fornecedor||!quantidade||!unidade||!valor) return alert("Preencha todos os campos!");
-  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",item,fornecedor,quantidade,unidade,valor})});
+  const produto=document.getElementById('produto').value.toUpperCase();
+  const fornecedor=document.getElementById('fornecedor').value.toUpperCase();
+  const linhas=document.querySelectorAll(".unidade-linha");
+  let unidadesTexto="";
+  linhas.forEach(l=>{
+    const u=l.querySelector(".unid").value.toUpperCase();
+    const v=parseFloat(l.querySelector(".valor").value.replace(/[R$\.\s]/g,"").replace(",","."))||0;
+    if(u && v) unidadesTexto+=`${u}=${v}\n`;
+  });
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,fornecedor,quantidade:1,unidade:"",valor:0,unidades:unidadesTexto})});
   alert("Item cadastrado!");
-  ['produto','quantidade','unidade','valor'].forEach(id=>document.getElementById(id).value='');
   fecharPopup('item');
   listarItens();
+}
+
+/* COTAÇÃO */
+function selecionarItem(id){
+  const item=todosItens.find(i=>i.id===id);
+  const unidades=todosItens.filter(x=>x.item===item.item);
+  const opcoes=unidades.map(u=>`${u.unidade} - R$${u.valor}`).join("\\n");
+  const escolha=prompt(`Escolha a unidade:\n${opcoes}`);
+  if(!escolha)return;
+  const unid=unidades.find(u=>escolha.includes(u.unidade));
+  if(unid)cotacaoItens.push(unid);
 }
 
 /* PDF */
@@ -228,8 +265,8 @@ function gerarPDF(){
   doc.text(`Data Final: ${data}`,10,36);
 
   let y=46;
-  todosItens.forEach(i=>{
-    doc.text(`${i.item} - ${i.fornecedor} | ${i.quantidade} ${i.unidade} | R$ ${parseFloat(i.valor).toFixed(2)}`,10,y);
+  cotacaoItens.forEach(i=>{
+    doc.text(`${i.item} - ${i.fornecedor} | ${i.quantidade} ${i.unidade} | R$ ${parseFloat(i.valor).toFixed(2).replace('.',',')}`,10,y);
     y+=6;
   });
   doc.save(`Cotacao_${nome}.pdf`);
