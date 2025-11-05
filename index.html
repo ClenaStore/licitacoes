@@ -20,19 +20,24 @@ header h1{margin:0;font-size:18px;}
 header .actions button{margin-left:10px;}
 .container{max-width:1000px;margin:auto;padding:20px;}
 .card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:0 2px 6px rgba(0,0,0,.1);margin-bottom:20px;}
-input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
+label{font-weight:600;display:block;margin-bottom:4px;}
+input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:15px;}
 button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;font-weight:600;}
 .btn-green{background:var(--green);color:var(--white);}
 .btn-blue{background:var(--blue);color:var(--white);}
 .btn-black{background:var(--black);color:var(--white);}
 table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border:1px solid #ddd;padding:10px;text-align:left;}
+th{background:var(--blue);color:var(--white);}
 .popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;}
 .popup-content{background:var(--white);padding:20px;border-radius:var(--radius);width:90%;max-width:600px;max-height:90%;overflow:auto;}
 .close{float:right;font-weight:bold;color:var(--blue);cursor:pointer;}
 .item-card{background:#fff;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
 .item-card h4{margin:0 0 4px 0;}
-.modalidades{position:fixed;top:70px;right:20px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.15);padding:10px;border-radius:var(--radius);z-index:99;}
-.modalidades button{display:block;width:100%;margin-bottom:6px;text-align:left;}
+.modalidades-menu{position:absolute;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.15);padding:8px;border-radius:var(--radius);display:none;z-index:10;width:calc(100% - 20px);}
+.modalidades-menu button{display:block;width:100%;background:none;border:none;text-align:left;padding:8px;border-radius:8px;cursor:pointer;}
+.modalidades-menu button:hover{background:var(--blue);color:var(--white);}
+.relative{position:relative;}
 </style>
 </head>
 <body>
@@ -44,27 +49,40 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}
   </div>
 </header>
 
-<div class="modalidades" id="menuModalidades">
-  <strong>Modalidade:</strong>
-  <button onclick="setModalidade('Pregão Eletrônico')">Pregão Eletrônico</button>
-  <button onclick="setModalidade('Dispensa de Licitação')">Dispensa de Licitação</button>
-  <button onclick="setModalidade('Tomada de Preços')">Tomada de Preços</button>
-  <button onclick="setModalidade('Carta Convite')">Carta Convite</button>
-</div>
-
 <div class="container">
   <div class="card">
     <h3>Nova Cotação</h3>
-    <input id="nomeCotacao" placeholder="Nome da Cotação">
-    <div style="display:flex;gap:10px;">
-      <input id="modalidade" placeholder="Modalidade" readonly>
-      <input id="local" placeholder="Local">
-      <input id="dataFinal" type="datetime-local">
+
+    <label for="nomeCotacao">Nome da Cotação</label>
+    <input id="nomeCotacao" placeholder="Ex: Cotação Mercearia Junho">
+
+    <div class="relative">
+      <label for="modalidade">Modalidade</label>
+      <input id="modalidade" placeholder="Selecione a Modalidade" readonly onclick="abrirMenuModalidade()">
+      <div class="modalidades-menu" id="menuModalidades">
+        <button onclick="setModalidade('Pregão Eletrônico')">Pregão Eletrônico</button>
+        <button onclick="setModalidade('Dispensa de Licitação')">Dispensa de Licitação</button>
+        <button onclick="setModalidade('Tomada de Preços')">Tomada de Preços</button>
+        <button onclick="setModalidade('Carta Convite')">Carta Convite</button>
+        <button onclick="setModalidade('Registro de Preços')">Registro de Preços</button>
+        <button onclick="setModalidade('Pregão Presencial')">Pregão Presencial</button>
+      </div>
     </div>
-    <input id="orgao" placeholder="Órgão / Unidade">
+
+    <label for="local">Local</label>
+    <input id="local" placeholder="Ex: Barreiras - BA">
+
+    <label for="orgao">Instituição / Órgão</label>
+    <input id="orgao" placeholder="Ex: Prefeitura de Barreiras">
+
+    <label for="dataFinal">Data Final</label>
+    <input id="dataFinal" type="datetime-local">
+
     <hr>
-    <input id="pesquisa" placeholder="Pesquisar item..." oninput="filtrarItens()">
+    <label for="pesquisa">Pesquisar Item</label>
+    <input id="pesquisa" placeholder="Digite o nome do item..." oninput="filtrarItens()">
     <div id="listaItens"></div>
+
     <button class="btn-black" onclick="gerarPDF()">📄 Gerar PDF</button>
   </div>
 </div>
@@ -74,9 +92,12 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}
   <div class="popup-content">
     <span class="close" onclick="fecharPopup('fornecedor')">✖</span>
     <h3>Novo Fornecedor</h3>
-    <input id="nomeF" placeholder="Nome">
-    <input id="cnpjF" placeholder="CPF/CNPJ" maxlength="18">
-    <input id="telF" placeholder="Telefone" maxlength="15">
+    <label>Nome do Fornecedor</label>
+    <input id="nomeF" placeholder="Ex: MERCATTO DELÍCIA">
+    <label>CPF / CNPJ</label>
+    <input id="cnpjF" placeholder="00.000.000/0000-00" maxlength="18">
+    <label>Telefone</label>
+    <input id="telF" placeholder="(77) 99999-9999" maxlength="15">
     <button class="btn-green" onclick="salvarFornecedor()">Salvar</button>
   </div>
 </div>
@@ -86,20 +107,23 @@ table{width:100%;border-collapse:collapse;margin-top:10px;}
   <div class="popup-content">
     <span class="close" onclick="fecharPopup('item')">✖</span>
     <h3>Novo Item</h3>
-    <input id="produto" placeholder="Nome do Produto">
-    <textarea id="obs" placeholder="Observação (opcional)"></textarea>
-    <textarea id="unidades" placeholder="Ex: 
-1 PC = 5
-1 FARDO = 50
-1 CX = 120"></textarea>
+    <label>Nome do Item</label>
+    <input id="produto" placeholder="Ex: ARROZ 5KG">
+    <label>Fornecedor</label>
     <select id="fornecedor"></select>
-    <button class="btn-blue" onclick="salvarItem()">Salvar</button>
+    <label>Quantidade</label>
+    <input id="quantidade" type="number" placeholder="Ex: 10">
+    <label>Unidade de Medida</label>
+    <input id="unidade" placeholder="Ex: CX, PC, KG">
+    <label>Valor (R$)</label>
+    <input id="valor" type="number" step="0.01" placeholder="Ex: 59.90">
+    <button class="btn-blue" onclick="salvarItem()">Salvar Item</button>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbx1px1oEI7yWBntiP-vAdt3t11qcp9nTMwrD93Ieb-TlG2ZJsTSFH2ulHxhVTZPXEM9ig/exec";
+const URL = "https://script.google.com/macros/s/AKfycbxAHXb_CVMyepJym0FJXX_tPY_zX3S79iLuj4sMFn0JstO4BAFOeDqkDXYIIQGioEBoFQ/exec";
 let fornecedores=[], todosItens=[], cotacaoItens=[];
 
 /* POPUPS */
@@ -107,7 +131,14 @@ function abrirPopup(t){document.getElementById(`popup-${t}`).style.display='flex
 function fecharPopup(t){document.getElementById(`popup-${t}`).style.display='none';}
 
 /* MENU MODALIDADE */
-function setModalidade(v){document.getElementById('modalidade').value=v;}
+function abrirMenuModalidade(){
+  const menu=document.getElementById("menuModalidades");
+  menu.style.display = menu.style.display==="block"?"none":"block";
+}
+function setModalidade(v){
+  document.getElementById("modalidade").value=v;
+  document.getElementById("menuModalidades").style.display="none";
+}
 
 /* MÁSCARAS */
 document.addEventListener("input", e=>{
@@ -137,9 +168,7 @@ async function salvarFornecedor(){
   const telefone=document.getElementById('telF').value.toUpperCase();
   await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarFornecedor",nome,cnpj,telefone})});
   alert("Fornecedor salvo!");
-  document.getElementById('nomeF').value='';
-  document.getElementById('cnpjF').value='';
-  document.getElementById('telF').value='';
+  ['nomeF','cnpjF','telF'].forEach(id=>document.getElementById(id).value='');
   fecharPopup('fornecedor');
   carregarFornecedores();
 }
@@ -154,40 +183,30 @@ function renderItens(lista){
   const div=document.getElementById("listaItens");
   div.innerHTML=lista.map(i=>`
   <div class="item-card">
-    <h4>${i.produto}</h4>
-    <small>${i.observacao||''}</small><br>
-    <b>${i.unidade}</b> — R$${i.valor}<br>
+    <h4>${i.item}</h4>
     <small>Fornecedor: ${i.fornecedor}</small><br>
-    <button class="btn-green" onclick='selecionarItem(${i.id})'>Selecionar</button>
+    <small>${i.quantidade} ${i.unidade} — <b>R$${parseFloat(i.valor).toFixed(2)}</b></small>
   </div>`).join("");
 }
 function filtrarItens(){
   const termo=document.getElementById("pesquisa").value.toUpperCase();
-  const filtrado=todosItens.filter(i=>i.produto.includes(termo));
+  const filtrado=todosItens.filter(i=>i.item.toUpperCase().includes(termo));
   renderItens(filtrado);
 }
 
 /* SALVAR ITEM */
 async function salvarItem(){
-  const produto=document.getElementById('produto').value.toUpperCase();
-  const observacao=document.getElementById('obs').value.toUpperCase();
-  const unidades=document.getElementById('unidades').value;
-  const fornecedor=document.getElementById('fornecedor').value.toUpperCase();
-  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,observacao,unidades,fornecedor})});
+  const item=document.getElementById('produto').value;
+  const fornecedor=document.getElementById('fornecedor').value;
+  const quantidade=document.getElementById('quantidade').value;
+  const unidade=document.getElementById('unidade').value;
+  const valor=document.getElementById('valor').value;
+  if(!item||!fornecedor||!quantidade||!unidade||!valor) return alert("Preencha todos os campos!");
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",item,fornecedor,quantidade,unidade,valor})});
   alert("Item cadastrado!");
+  ['produto','quantidade','unidade','valor'].forEach(id=>document.getElementById(id).value='');
   fecharPopup('item');
   listarItens();
-}
-
-/* COTAÇÃO */
-function selecionarItem(id){
-  const item=todosItens.find(i=>i.id===id);
-  const unidades=todosItens.filter(x=>x.produto===item.produto);
-  const opcoes=unidades.map(u=>`${u.unidade} - R$${u.valor}`).join("\\n");
-  const escolha=prompt(`Escolha a unidade:\n${opcoes}`);
-  if(!escolha) return;
-  const unid=unidades.find(u=>escolha.includes(u.unidade));
-  if(unid) cotacaoItens.push(unid);
 }
 
 /* PDF */
@@ -204,27 +223,15 @@ function gerarPDF(){
   doc.text(`COTAÇÃO: ${nome}`,10,10);
   doc.setFontSize(10);
   doc.text(`Modalidade: ${modalidade}`,10,18);
-  doc.text(`Local: ${local}`,10,24);
-  doc.text(`Data Final: ${data}`,10,30);
-  doc.text(`Órgão: ${orgao}`,10,36);
+  doc.text(`Instituição: ${orgao}`,10,24);
+  doc.text(`Local: ${local}`,10,30);
+  doc.text(`Data Final: ${data}`,10,36);
 
   let y=46;
-  const agrupado={};
-  cotacaoItens.forEach(i=>{
-    if(!agrupado[i.fornecedor]) agrupado[i.fornecedor]=[];
-    agrupado[i.fornecedor].push(i);
-  });
-  for(const f in agrupado){
-    doc.setFontSize(11);
-    doc.text(`Fornecedor: ${f}`,10,y);
+  todosItens.forEach(i=>{
+    doc.text(`${i.item} - ${i.fornecedor} | ${i.quantidade} ${i.unidade} | R$ ${parseFloat(i.valor).toFixed(2)}`,10,y);
     y+=6;
-    agrupado[f].forEach(i=>{
-      doc.setFontSize(9);
-      doc.text(`• ${i.produto} - ${i.unidade} - R$${i.valor}`,12,y);
-      y+=5;
-    });
-    y+=4;
-  }
+  });
   doc.save(`Cotacao_${nome}.pdf`);
 }
 
