@@ -8,135 +8,215 @@
 <style>
 :root {
   --blue:#1e90ff;--green:#22c55e;--black:#0b0f19;
-  --white:#ffffff;--gray:#f4f4f4;--radius:12px;
+  --white:#ffffff;--gray:#f5f6f8;--radius:14px;
 }
 *{box-sizing:border-box;font-family:'Inter',sans-serif;}
 body{background:var(--gray);margin:0;padding:0;color:var(--black);}
-header{background:var(--black);color:var(--white);padding:20px;text-align:center;font-weight:600;}
+header{
+  background:var(--black);color:var(--white);
+  padding:15px 20px;display:flex;justify-content:space-between;align-items:center;
+}
+header h1{margin:0;font-size:18px;}
+header .actions button{margin-left:10px;}
+
 .container{max-width:1000px;margin:auto;padding:20px;}
 .card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:0 2px 6px rgba(0,0,0,.1);margin-bottom:20px;}
-input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
-button{padding:10px 20px;border:none;border-radius:var(--radius);cursor:pointer;font-weight:600;}
+
+input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
+button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;font-weight:600;}
 .btn-green{background:var(--green);color:var(--white);}
 .btn-blue{background:var(--blue);color:var(--white);}
-.btn-red{background:#ef4444;color:var(--white);}
+.btn-black{background:var(--black);color:var(--white);}
+.btn-red{background:#ef4444;color:#fff;}
+
 table{width:100%;border-collapse:collapse;margin-top:10px;}
 th,td{border:1px solid #ddd;padding:10px;text-align:left;}
 th{background:var(--blue);color:var(--white);}
-.popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;}
-.popup-content{background:var(--white);padding:20px;border-radius:var(--radius);width:90%;max-width:600px;}
+.search{margin-bottom:10px;display:flex;gap:10px;}
+.popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;}
+.popup-content{background:var(--white);padding:20px;border-radius:var(--radius);width:90%;max-width:600px;max-height:90%;overflow:auto;}
 .close{float:right;font-weight:bold;color:var(--blue);cursor:pointer;}
+.item-card{background:#fff;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
+.item-card h4{margin:0 0 4px 0;}
 </style>
 </head>
 <body>
-<header>💼 Sistema de Cotações - Grupo DV</header>
+<header>
+  <h1>📦 Cotações - Grupo DV</h1>
+  <div class="actions">
+    <button class="btn-blue" onclick="abrirPopup('fornecedor')">Fornecedor</button>
+    <button class="btn-green" onclick="abrirPopup('item')">Item</button>
+  </div>
+</header>
+
 <div class="container">
-
-<div class="card">
-<h3>Cadastro de Fornecedor</h3>
-<input id="nomeF" placeholder="Nome do Fornecedor">
-<input id="cnpjF" placeholder="CNPJ">
-<input id="telF" placeholder="Telefone">
-<button class="btn-green" onclick="salvarFornecedor()">Salvar Fornecedor</button>
+  <div class="card">
+    <h3>Nova Cotação</h3>
+    <input id="nomeCotacao" placeholder="Nome da Cotação">
+    <div class="search">
+      <input id="modalidade" placeholder="Modalidade">
+      <input id="local" placeholder="Local">
+      <input id="dataFinal" type="datetime-local">
+    </div>
+    <input id="orgao" placeholder="Órgão / Unidade">
+    <hr>
+    <input id="pesquisa" placeholder="Pesquisar item..." oninput="filtrarItens()">
+    <div id="listaItens"></div>
+    <button class="btn-black" onclick="gerarPDF()">📄 Gerar PDF</button>
+  </div>
 </div>
 
-<div class="card">
-<h3>Cadastro de Item</h3>
-<input id="produto" placeholder="Nome do Produto">
-<select id="fornecedor"></select>
-<input id="valor" placeholder="Valor (R$)">
-<button class="btn-blue" onclick="salvarItem()">Salvar Item</button>
+<!-- POPUPS -->
+<div class="popup" id="popup-fornecedor">
+  <div class="popup-content">
+    <span class="close" onclick="fecharPopup('fornecedor')">✖</span>
+    <h3>Novo Fornecedor</h3>
+    <input id="nomeF" placeholder="Nome">
+    <input id="cnpjF" placeholder="CPF/CNPJ" maxlength="18">
+    <input id="telF" placeholder="Telefone" maxlength="15">
+    <button class="btn-green" onclick="salvarFornecedor()">Salvar</button>
+  </div>
 </div>
 
-<div class="card">
-<h3>Itens Cadastrados</h3>
-<table id="tabelaItens"><thead><tr><th>Produto</th><th>Fornecedor</th><th>Valor</th><th>Ações</th></tr></thead><tbody></tbody></table>
+<div class="popup" id="popup-item">
+  <div class="popup-content">
+    <span class="close" onclick="fecharPopup('item')">✖</span>
+    <h3>Novo Item</h3>
+    <input id="produto" placeholder="Nome do Produto">
+    <textarea id="obs" placeholder="Observação (opcional)"></textarea>
+    <input id="unidades" placeholder="Ex: 1 PC=5 | 1 FARDO=50">
+    <select id="fornecedor"></select>
+    <button class="btn-blue" onclick="salvarItem()">Salvar</button>
+  </div>
 </div>
 
-<button class="btn-green" onclick="abrirCotacao()">Fazer Cotação</button>
-</div>
-
-<div class="popup" id="popupCotacao">
-<div class="popup-content">
-<span class="close" onclick="fecharCotacao()">✖</span>
-<h3>Fazer Cotação</h3>
-<table id="tabelaCotacao"><thead><tr><th>Produto</th><th>Fornecedor</th><th>Valor</th></tr></thead><tbody></tbody></table>
-<div id="resultadoCotacao" style="margin-top:10px;font-weight:600;"></div>
-</div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbxoPDtIcfSmJ0OOeLVgfT6V1cNwfFlp4UkuZJDYgOhkziH4w6caNMHo70SXer_1DzZUDA/exec";
+const URL = "https://script.google.com/macros/s/AKfycbzHxzPhB0OCUMLZcItvlJBp3PA09CBDa0IBYuOHL2TCOAJmmVIwS216c35jf35AV-uXNw/exec";
 
-async function carregarFornecedores() {
-  const r = await fetch(`${URL}?acao=listarFornecedores`);
-  const dados = await r.json();
-  const sel = document.getElementById("fornecedor");
-  sel.innerHTML = dados.map(f => `<option>${f.nome}</option>`).join("");
+let todosItens = [], fornecedores = [], cotacaoItens = [];
+
+/* POPUPS */
+function abrirPopup(t){document.getElementById(`popup-${t}`).style.display='flex';}
+function fecharPopup(t){document.getElementById(`popup-${t}`).style.display='none';}
+
+/* MÁSCARAS */
+document.addEventListener("input", e=>{
+  if(e.target.id==="cnpjF"){
+    let v=e.target.value.replace(/\D/g,"");
+    e.target.value=v.length<=11?v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4"):
+    v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5");
+  }
+  if(e.target.id==="telF"){
+    let v=e.target.value.replace(/\D/g,"");
+    e.target.value=v.replace(/(\d{2})(\d{5})(\d{4})/,"($1) $2-$3");
+  }
+});
+
+/* FORNECEDORES */
+async function carregarFornecedores(){
+  const r=await fetch(`${URL}?acao=listarFornecedores`);
+  fornecedores=await r.json();
+  const sel=document.getElementById("fornecedor");
+  sel.innerHTML=fornecedores.map(f=>`<option>${f.nome}</option>`).join("");
 }
 
-async function listarItens() {
-  const r = await fetch(`${URL}?acao=listarItens`);
-  const dados = await r.json();
-  const tbody = document.querySelector("#tabelaItens tbody");
-  tbody.innerHTML = dados.map(i => `
-    <tr>
-      <td>${i.produto}</td><td>${i.fornecedor}</td><td>R$${i.valor}</td>
-      <td>
-        <button class='btn-blue' onclick='editarItem(${i.id},"${i.produto}","${i.fornecedor}",${i.valor})'>✏️</button>
-        <button class='btn-red' onclick='excluirItem(${i.id})'>🗑️</button>
-      </td>
-    </tr>`).join("");
+/* ITENS */
+async function listarItens(){
+  const r=await fetch(`${URL}?acao=listarItens`);
+  todosItens=await r.json();
+  renderItens(todosItens);
 }
 
+function renderItens(lista){
+  const div=document.getElementById("listaItens");
+  div.innerHTML=lista.map(i=>`
+  <div class="item-card">
+    <h4>${i.produto}</h4>
+    <small>${i.observacao||''}</small><br>
+    <small>Fornecedor: ${i.fornecedor}</small><br>
+    <small>Unidades: ${i.unidades}</small><br>
+    <button class="btn-green" onclick='selecionarItem(${i.id})'>Selecionar</button>
+  </div>`).join("");
+}
+
+function filtrarItens(){
+  const termo=document.getElementById("pesquisa").value.toUpperCase();
+  const filtrado=todosItens.filter(i=>i.produto.includes(termo));
+  renderItens(filtrado);
+}
+
+/* SALVAR */
 async function salvarFornecedor(){
-  const nome=document.getElementById('nomeF').value;
-  const cnpj=document.getElementById('cnpjF').value;
-  const tel=document.getElementById('telF').value;
-  if(!nome) return alert("Preencha o nome");
-  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarFornecedor",nome,cnpj,telefone:tel})});
-  alert("Fornecedor salvo!");
+  const nome=document.getElementById('nomeF').value.toUpperCase();
+  const cnpj=document.getElementById('cnpjF').value.toUpperCase();
+  const telefone=document.getElementById('telF').value.toUpperCase();
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarFornecedor",nome,cnpj,telefone})});
+  alert("Fornecedor cadastrado!");
+  fecharPopup('fornecedor');
   carregarFornecedores();
 }
 
 async function salvarItem(){
-  const produto=document.getElementById('produto').value;
-  const fornecedor=document.getElementById('fornecedor').value;
-  const valor=parseFloat(document.getElementById('valor').value);
-  if(!produto||!fornecedor||!valor) return alert("Preencha todos os campos");
-  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,fornecedor,valor})});
+  const produto=document.getElementById('produto').value.toUpperCase();
+  const observacao=document.getElementById('obs').value.toUpperCase();
+  const unidades=document.getElementById('unidades').value.toUpperCase();
+  const fornecedor=document.getElementById('fornecedor').value.toUpperCase();
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,observacao,unidades,fornecedor})});
+  alert("Item cadastrado!");
+  fecharPopup('item');
   listarItens();
 }
 
-async function excluirItem(id){
-  if(!confirm("Excluir item?")) return;
-  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"excluirItem",id})});
-  listarItens();
+/* COTAÇÃO */
+function selecionarItem(id){
+  const item=todosItens.find(i=>i.id===id);
+  cotacaoItens.push(item);
+  alert("Item adicionado à cotação!");
 }
 
-function editarItem(id,produto,fornecedor,valor){
-  const novoValor = prompt("Novo valor:",valor);
-  if(!novoValor) return;
-  fetch(URL,{method:"POST",body:JSON.stringify({acao:"editarItem",id,produto,fornecedor,valor:parseFloat(novoValor)})}).then(listarItens);
-}
+/* GERAR PDF */
+function gerarPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const nome=document.getElementById("nomeCotacao").value;
+  const modalidade=document.getElementById("modalidade").value;
+  const local=document.getElementById("local").value;
+  const data=document.getElementById("dataFinal").value;
+  const orgao=document.getElementById("orgao").value;
 
-/************ COTAÇÃO ************/
-async function abrirCotacao(){
-  document.getElementById("popupCotacao").style.display="flex";
-  const r = await fetch(`${URL}?acao=listarItens`);
-  const itens = await r.json();
-  const tbody = document.querySelector("#tabelaCotacao tbody");
-  tbody.innerHTML = itens.map(i=>`<tr><td>${i.produto}</td><td>${i.fornecedor}</td><td>R$${i.valor}</td></tr>`).join("");
-  const agrupado = {};
-  itens.forEach(i=>{
-    if(!agrupado[i.produto]||parseFloat(i.valor)<parseFloat(agrupado[i.produto].valor)) agrupado[i.produto]=i;
+  doc.setFontSize(14);
+  doc.text(`COTAÇÃO: ${nome}`,10,10);
+  doc.setFontSize(10);
+  doc.text(`Modalidade: ${modalidade}`,10,18);
+  doc.text(`Local: ${local}`,10,24);
+  doc.text(`Data Final: ${data}`,10,30);
+  doc.text(`Órgão: ${orgao}`,10,36);
+
+  doc.text("Itens Cotados:",10,46);
+  let y=52;
+  const agrupado={};
+  cotacaoItens.forEach(i=>{
+    if(!agrupado[i.fornecedor]) agrupado[i.fornecedor]=[];
+    agrupado[i.fornecedor].push(i);
   });
-  let res="<h4>💰 Fornecedores com menor preço:</h4>";
-  for(let p in agrupado) res+=`<div>${p}: <b>${agrupado[p].fornecedor}</b> (R$${agrupado[p].valor})</div>`;
-  document.getElementById("resultadoCotacao").innerHTML=res;
-}
-function fecharCotacao(){document.getElementById("popupCotacao").style.display="none";}
 
+  for(const f in agrupado){
+    doc.setFontSize(11);
+    doc.text(`Fornecedor: ${f}`,10,y);
+    y+=6;
+    agrupado[f].forEach(i=>{
+      doc.setFontSize(9);
+      doc.text(`• ${i.produto} (${i.unidades})`,12,y);
+      y+=5;
+    });
+    y+=4;
+  }
+
+  doc.save(`Cotacao_${nome}.pdf`);
+}
+
+/* INICIAR */
 carregarFornecedores();
 listarItens();
 </script>
