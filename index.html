@@ -8,7 +8,7 @@
 <style>
 :root {
   --blue:#1e90ff;--green:#22c55e;--black:#0b0f19;
-  --white:#ffffff;--gray:#f5f6f8;--radius:14px;
+  --white:#fff;--gray:#f5f6f8;--radius:14px;
 }
 *{box-sizing:border-box;font-family:'Inter',sans-serif;}
 body{background:var(--gray);margin:0;padding:0;color:var(--black);}
@@ -18,26 +18,21 @@ header{
 }
 header h1{margin:0;font-size:18px;}
 header .actions button{margin-left:10px;}
-
 .container{max-width:1000px;margin:auto;padding:20px;}
 .card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:0 2px 6px rgba(0,0,0,.1);margin-bottom:20px;}
-
 input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
 button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;font-weight:600;}
 .btn-green{background:var(--green);color:var(--white);}
 .btn-blue{background:var(--blue);color:var(--white);}
 .btn-black{background:var(--black);color:var(--white);}
-.btn-red{background:#ef4444;color:#fff;}
-
 table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{border:1px solid #ddd;padding:10px;text-align:left;}
-th{background:var(--blue);color:var(--white);}
-.search{margin-bottom:10px;display:flex;gap:10px;}
 .popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;}
 .popup-content{background:var(--white);padding:20px;border-radius:var(--radius);width:90%;max-width:600px;max-height:90%;overflow:auto;}
 .close{float:right;font-weight:bold;color:var(--blue);cursor:pointer;}
 .item-card{background:#fff;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
 .item-card h4{margin:0 0 4px 0;}
+.modalidades{position:fixed;top:70px;right:20px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.15);padding:10px;border-radius:var(--radius);z-index:99;}
+.modalidades button{display:block;width:100%;margin-bottom:6px;text-align:left;}
 </style>
 </head>
 <body>
@@ -49,12 +44,20 @@ th{background:var(--blue);color:var(--white);}
   </div>
 </header>
 
+<div class="modalidades" id="menuModalidades">
+  <strong>Modalidade:</strong>
+  <button onclick="setModalidade('Pregão Eletrônico')">Pregão Eletrônico</button>
+  <button onclick="setModalidade('Dispensa de Licitação')">Dispensa de Licitação</button>
+  <button onclick="setModalidade('Tomada de Preços')">Tomada de Preços</button>
+  <button onclick="setModalidade('Carta Convite')">Carta Convite</button>
+</div>
+
 <div class="container">
   <div class="card">
     <h3>Nova Cotação</h3>
     <input id="nomeCotacao" placeholder="Nome da Cotação">
-    <div class="search">
-      <input id="modalidade" placeholder="Modalidade">
+    <div style="display:flex;gap:10px;">
+      <input id="modalidade" placeholder="Modalidade" readonly>
       <input id="local" placeholder="Local">
       <input id="dataFinal" type="datetime-local">
     </div>
@@ -66,7 +69,7 @@ th{background:var(--blue);color:var(--white);}
   </div>
 </div>
 
-<!-- POPUPS -->
+<!-- POPUP FORNECEDOR -->
 <div class="popup" id="popup-fornecedor">
   <div class="popup-content">
     <span class="close" onclick="fecharPopup('fornecedor')">✖</span>
@@ -78,13 +81,17 @@ th{background:var(--blue);color:var(--white);}
   </div>
 </div>
 
+<!-- POPUP ITEM -->
 <div class="popup" id="popup-item">
   <div class="popup-content">
     <span class="close" onclick="fecharPopup('item')">✖</span>
     <h3>Novo Item</h3>
     <input id="produto" placeholder="Nome do Produto">
     <textarea id="obs" placeholder="Observação (opcional)"></textarea>
-    <input id="unidades" placeholder="Ex: 1 PC=5 | 1 FARDO=50">
+    <textarea id="unidades" placeholder="Ex: 
+1 PC = 5
+1 FARDO = 50
+1 CX = 120"></textarea>
     <select id="fornecedor"></select>
     <button class="btn-blue" onclick="salvarItem()">Salvar</button>
   </div>
@@ -92,13 +99,15 @@ th{background:var(--blue);color:var(--white);}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbzHxzPhB0OCUMLZcItvlJBp3PA09CBDa0IBYuOHL2TCOAJmmVIwS216c35jf35AV-uXNw/exec";
-
-let todosItens = [], fornecedores = [], cotacaoItens = [];
+const URL = "https://script.google.com/macros/s/AKfycbx1px1oEI7yWBntiP-vAdt3t11qcp9nTMwrD93Ieb-TlG2ZJsTSFH2ulHxhVTZPXEM9ig/exec";
+let fornecedores=[], todosItens=[], cotacaoItens=[];
 
 /* POPUPS */
 function abrirPopup(t){document.getElementById(`popup-${t}`).style.display='flex';}
 function fecharPopup(t){document.getElementById(`popup-${t}`).style.display='none';}
+
+/* MENU MODALIDADE */
+function setModalidade(v){document.getElementById('modalidade').value=v;}
 
 /* MÁSCARAS */
 document.addEventListener("input", e=>{
@@ -121,46 +130,48 @@ async function carregarFornecedores(){
   sel.innerHTML=fornecedores.map(f=>`<option>${f.nome}</option>`).join("");
 }
 
+/* SALVAR FORNECEDOR */
+async function salvarFornecedor(){
+  const nome=document.getElementById('nomeF').value.toUpperCase();
+  const cnpj=document.getElementById('cnpjF').value.toUpperCase();
+  const telefone=document.getElementById('telF').value.toUpperCase();
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarFornecedor",nome,cnpj,telefone})});
+  alert("Fornecedor salvo!");
+  document.getElementById('nomeF').value='';
+  document.getElementById('cnpjF').value='';
+  document.getElementById('telF').value='';
+  fecharPopup('fornecedor');
+  carregarFornecedores();
+}
+
 /* ITENS */
 async function listarItens(){
   const r=await fetch(`${URL}?acao=listarItens`);
   todosItens=await r.json();
   renderItens(todosItens);
 }
-
 function renderItens(lista){
   const div=document.getElementById("listaItens");
   div.innerHTML=lista.map(i=>`
   <div class="item-card">
     <h4>${i.produto}</h4>
     <small>${i.observacao||''}</small><br>
+    <b>${i.unidade}</b> — R$${i.valor}<br>
     <small>Fornecedor: ${i.fornecedor}</small><br>
-    <small>Unidades: ${i.unidades}</small><br>
     <button class="btn-green" onclick='selecionarItem(${i.id})'>Selecionar</button>
   </div>`).join("");
 }
-
 function filtrarItens(){
   const termo=document.getElementById("pesquisa").value.toUpperCase();
   const filtrado=todosItens.filter(i=>i.produto.includes(termo));
   renderItens(filtrado);
 }
 
-/* SALVAR */
-async function salvarFornecedor(){
-  const nome=document.getElementById('nomeF').value.toUpperCase();
-  const cnpj=document.getElementById('cnpjF').value.toUpperCase();
-  const telefone=document.getElementById('telF').value.toUpperCase();
-  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarFornecedor",nome,cnpj,telefone})});
-  alert("Fornecedor cadastrado!");
-  fecharPopup('fornecedor');
-  carregarFornecedores();
-}
-
+/* SALVAR ITEM */
 async function salvarItem(){
   const produto=document.getElementById('produto').value.toUpperCase();
   const observacao=document.getElementById('obs').value.toUpperCase();
-  const unidades=document.getElementById('unidades').value.toUpperCase();
+  const unidades=document.getElementById('unidades').value;
   const fornecedor=document.getElementById('fornecedor').value.toUpperCase();
   await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,observacao,unidades,fornecedor})});
   alert("Item cadastrado!");
@@ -171,14 +182,18 @@ async function salvarItem(){
 /* COTAÇÃO */
 function selecionarItem(id){
   const item=todosItens.find(i=>i.id===id);
-  cotacaoItens.push(item);
-  alert("Item adicionado à cotação!");
+  const unidades=todosItens.filter(x=>x.produto===item.produto);
+  const opcoes=unidades.map(u=>`${u.unidade} - R$${u.valor}`).join("\\n");
+  const escolha=prompt(`Escolha a unidade:\n${opcoes}`);
+  if(!escolha) return;
+  const unid=unidades.find(u=>escolha.includes(u.unidade));
+  if(unid) cotacaoItens.push(unid);
 }
 
-/* GERAR PDF */
+/* PDF */
 function gerarPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF();
   const nome=document.getElementById("nomeCotacao").value;
   const modalidade=document.getElementById("modalidade").value;
   const local=document.getElementById("local").value;
@@ -193,30 +208,27 @@ function gerarPDF(){
   doc.text(`Data Final: ${data}`,10,30);
   doc.text(`Órgão: ${orgao}`,10,36);
 
-  doc.text("Itens Cotados:",10,46);
-  let y=52;
+  let y=46;
   const agrupado={};
   cotacaoItens.forEach(i=>{
     if(!agrupado[i.fornecedor]) agrupado[i.fornecedor]=[];
     agrupado[i.fornecedor].push(i);
   });
-
   for(const f in agrupado){
     doc.setFontSize(11);
     doc.text(`Fornecedor: ${f}`,10,y);
     y+=6;
     agrupado[f].forEach(i=>{
       doc.setFontSize(9);
-      doc.text(`• ${i.produto} (${i.unidades})`,12,y);
+      doc.text(`• ${i.produto} - ${i.unidade} - R$${i.valor}`,12,y);
       y+=5;
     });
     y+=4;
   }
-
   doc.save(`Cotacao_${nome}.pdf`);
 }
 
-/* INICIAR */
+/* INICIALIZAÇÃO */
 carregarFornecedores();
 listarItens();
 </script>
