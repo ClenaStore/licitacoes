@@ -111,33 +111,35 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
     <label>Nome do Item</label>
     <input id="produto" placeholder="Ex: ARROZ 5KG">
     <label>Fornecedor</label>
-    <select id="fornecedor"></select>
+    <select id="fornecedor">
+      <option disabled selected value="">Selecione o fornecedor</option>
+    </select>
 
     <label>Unidades e Valores</label>
     <div id="unidadesContainer">
       <div class="unidade-linha relative">
         <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid" readonly onclick="abrirMenuUnidades(this)">
         <div class="menu-flutuante" id="menuUnidades">
-          <button onclick="setUnidade('PC')">PC</button>
-          <button onclick="setUnidade('CX')">CX</button>
-          <button onclick="setUnidade('FD')">FD</button>
-          <button onclick="setUnidade('KG')">KG</button>
-          <button onclick="setUnidade('G')">G</button>
-          <button onclick="setUnidade('UN')">UN</button>
-          <button onclick="setUnidade('LT')">LT</button>
-          <button onclick="setUnidade('ML')">ML</button>
-          <button onclick="setUnidade('MT')">MT</button>
-          <button onclick="setUnidade('PCT')">PCT</button>
-          <button onclick="setUnidade('SC')">SC</button>
-          <button onclick="setUnidade('DZ')">DZ</button>
-          <button onclick="setUnidade('PAR')">PAR</button>
-          <button onclick="setUnidade('JG')">JG</button>
-          <button onclick="setUnidade('ROLO')">ROLO</button>
-          <button onclick="setUnidade('PL')">PL</button>
-          <button onclick="setUnidade('TON')">TON</button>
-          <button onclick="setUnidade('SACO')">SACO</button>
-          <button onclick="setUnidade('BALDE')">BALDE</button>
-          <button onclick="setUnidade('M²')">M²</button>
+          <button onclick="setUnidade('PC')">PC — Peça</button>
+          <button onclick="setUnidade('CX')">CX — Caixa</button>
+          <button onclick="setUnidade('FD')">FD — Fardo</button>
+          <button onclick="setUnidade('KG')">KG — Quilograma</button>
+          <button onclick="setUnidade('G')">G — Grama</button>
+          <button onclick="setUnidade('UN')">UN — Unidade</button>
+          <button onclick="setUnidade('LT')">LT — Litro</button>
+          <button onclick="setUnidade('ML')">ML — Mililitro</button>
+          <button onclick="setUnidade('MT')">MT — Metro</button>
+          <button onclick="setUnidade('PCT')">PCT — Pacote</button>
+          <button onclick="setUnidade('SC')">SC — Saco</button>
+          <button onclick="setUnidade('DZ')">DZ — Dúzia</button>
+          <button onclick="setUnidade('PAR')">PAR — Par</button>
+          <button onclick="setUnidade('JG')">JG — Jogo</button>
+          <button onclick="setUnidade('ROLO')">ROLO — Rolo</button>
+          <button onclick="setUnidade('PL')">PL — Placa</button>
+          <button onclick="setUnidade('TON')">TON — Tonelada</button>
+          <button onclick="setUnidade('SACO')">SACO — Saco</button>
+          <button onclick="setUnidade('BALDE')">BALDE — Balde</button>
+          <button onclick="setUnidade('M²')">M² — Metro quadrado</button>
         </div>
         <input placeholder="Valor (R$)" class="valor" oninput="mascaraValor(this)">
         <button class="btn-blue" onclick="adicionarLinha()">+</button>
@@ -147,7 +149,7 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
   </div>
 </div>
 
-<!-- POPUP UNIDADES (para escolher na cotação) -->
+<!-- POPUP UNIDADES -->
 <div class="popup" id="popup-unidades">
   <div class="popup-content">
     <span class="close" onclick="fecharPopup('unidades')">✖</span>
@@ -158,11 +160,15 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbxAHXb_CVMyepJym0FJXX_tPY_zX3S79iLuj4sMFn0JstO4BAFOeDqkDXYIIQGioEBoFQ/exec";
+const URL = "COLE_SEU_WEBAPP_URL_AQUI";
 let fornecedores=[], todosItens=[], cotacaoItens=[], unidadesTemp=[], unidadeAtualInput=null;
 
 /* POPUPS */
-function abrirPopup(t){document.getElementById(`popup-${t}`).style.display='flex';}
+function abrirPopup(t){
+  const popup=document.getElementById(`popup-${t}`);
+  popup.style.display='flex';
+  if(t==='item') carregarFornecedores(); // 🔹 garante atualização dos fornecedores
+}
 function fecharPopup(t){document.getElementById(`popup-${t}`).style.display='none';}
 
 /* MENU FLUTUANTE */
@@ -212,7 +218,7 @@ function adicionarLinha(){
   const div=document.createElement("div");
   div.className="unidade-linha relative";
   div.innerHTML=`
-    <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid" readonly onclick="abrirMenuUnidades(this)">
+    <input placeholder="Unidade" class="unid" readonly onclick="abrirMenuUnidades(this)">
     <input placeholder="Valor (R$)" class="valor" oninput="mascaraValor(this)">
     <button class="btn-red" onclick="this.parentElement.remove()">-</button>`;
   cont.appendChild(div);
@@ -220,10 +226,15 @@ function adicionarLinha(){
 
 /* FORNECEDORES */
 async function carregarFornecedores(){
-  const r=await fetch(`${URL}?acao=listarFornecedores`);
-  fornecedores=await r.json();
-  const sel=document.getElementById("fornecedor");
-  sel.innerHTML=fornecedores.map(f=>`<option>${f.nome}</option>`).join("");
+  try{
+    const r=await fetch(`${URL}?acao=listarFornecedores`);
+    fornecedores=await r.json();
+    const sel=document.getElementById("fornecedor");
+    sel.innerHTML='<option disabled selected value="">Selecione o fornecedor</option>';
+    fornecedores.forEach(f=>{
+      if(f.nome) sel.innerHTML+=`<option value="${f.nome}">${f.nome}</option>`;
+    });
+  }catch(e){console.error("Erro ao carregar fornecedores",e);}
 }
 
 /* SALVAR FORNECEDOR */
@@ -250,7 +261,7 @@ function renderItens(lista){
   <div class="item-card">
     <h4>${i.item}</h4>
     <small>Fornecedor: ${i.fornecedor}</small><br>
-    <b>${i.quantidade} ${i.unidade}</b> — <b>R$${parseFloat(i.valor).toFixed(2).replace('.',',')}</b><br>
+    <b>${i.unidade}</b> — <b>R$${parseFloat(i.valor).toFixed(2).replace('.',',')}</b><br>
     <button class="btn-green" onclick='abrirUnidades("${i.item}")'>Selecionar</button>
   </div>`).join("");
 }
@@ -260,7 +271,7 @@ function filtrarItens(){
   renderItens(filtrado);
 }
 
-/* POPUP DE UNIDADES PARA SELECIONAR */
+/* POPUP DE UNIDADES */
 function abrirUnidades(produto){
   unidadesTemp=todosItens.filter(i=>i.item===produto);
   const div=document.getElementById("listaUnidades");
