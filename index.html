@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sistema de Cotações - Grupo DV</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#1e90ff;--green:#22c55e;--black:#0b0f19;
+  --white:#ffffff;--gray:#f4f4f4;--radius:12px;
+}
+*{box-sizing:border-box;font-family:'Inter',sans-serif;}
+body{background:var(--gray);margin:0;padding:0;color:var(--black);}
+header{background:var(--black);color:var(--white);padding:20px;text-align:center;font-weight:600;}
+.container{max-width:1000px;margin:auto;padding:20px;}
+.card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:0 2px 6px rgba(0,0,0,.1);margin-bottom:20px;}
+input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
+button{padding:10px 20px;border:none;border-radius:var(--radius);cursor:pointer;font-weight:600;}
+.btn-green{background:var(--green);color:var(--white);}
+.btn-blue{background:var(--blue);color:var(--white);}
+.btn-red{background:#ef4444;color:var(--white);}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border:1px solid #ddd;padding:10px;text-align:left;}
+th{background:var(--blue);color:var(--white);}
+.popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;}
+.popup-content{background:var(--white);padding:20px;border-radius:var(--radius);width:90%;max-width:600px;}
+.close{float:right;font-weight:bold;color:var(--blue);cursor:pointer;}
+</style>
+</head>
+<body>
+<header>💼 Sistema de Cotações - Grupo DV</header>
+<div class="container">
+
+<div class="card">
+<h3>Cadastro de Fornecedor</h3>
+<input id="nomeF" placeholder="Nome do Fornecedor">
+<input id="cnpjF" placeholder="CNPJ">
+<input id="telF" placeholder="Telefone">
+<button class="btn-green" onclick="salvarFornecedor()">Salvar Fornecedor</button>
+</div>
+
+<div class="card">
+<h3>Cadastro de Item</h3>
+<input id="produto" placeholder="Nome do Produto">
+<select id="fornecedor"></select>
+<input id="valor" placeholder="Valor (R$)">
+<button class="btn-blue" onclick="salvarItem()">Salvar Item</button>
+</div>
+
+<div class="card">
+<h3>Itens Cadastrados</h3>
+<table id="tabelaItens"><thead><tr><th>Produto</th><th>Fornecedor</th><th>Valor</th><th>Ações</th></tr></thead><tbody></tbody></table>
+</div>
+
+<button class="btn-green" onclick="abrirCotacao()">Fazer Cotação</button>
+</div>
+
+<div class="popup" id="popupCotacao">
+<div class="popup-content">
+<span class="close" onclick="fecharCotacao()">✖</span>
+<h3>Fazer Cotação</h3>
+<table id="tabelaCotacao"><thead><tr><th>Produto</th><th>Fornecedor</th><th>Valor</th></tr></thead><tbody></tbody></table>
+<div id="resultadoCotacao" style="margin-top:10px;font-weight:600;"></div>
+</div>
+</div>
+
+<script>
+const URL = "https://script.google.com/macros/s/AKfycbxoPDtIcfSmJ0OOeLVgfT6V1cNwfFlp4UkuZJDYgOhkziH4w6caNMHo70SXer_1DzZUDA/exec";
+
+async function carregarFornecedores() {
+  const r = await fetch(`${URL}?acao=listarFornecedores`);
+  const dados = await r.json();
+  const sel = document.getElementById("fornecedor");
+  sel.innerHTML = dados.map(f => `<option>${f.nome}</option>`).join("");
+}
+
+async function listarItens() {
+  const r = await fetch(`${URL}?acao=listarItens`);
+  const dados = await r.json();
+  const tbody = document.querySelector("#tabelaItens tbody");
+  tbody.innerHTML = dados.map(i => `
+    <tr>
+      <td>${i.produto}</td><td>${i.fornecedor}</td><td>R$${i.valor}</td>
+      <td>
+        <button class='btn-blue' onclick='editarItem(${i.id},"${i.produto}","${i.fornecedor}",${i.valor})'>✏️</button>
+        <button class='btn-red' onclick='excluirItem(${i.id})'>🗑️</button>
+      </td>
+    </tr>`).join("");
+}
+
+async function salvarFornecedor(){
+  const nome=document.getElementById('nomeF').value;
+  const cnpj=document.getElementById('cnpjF').value;
+  const tel=document.getElementById('telF').value;
+  if(!nome) return alert("Preencha o nome");
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarFornecedor",nome,cnpj,telefone:tel})});
+  alert("Fornecedor salvo!");
+  carregarFornecedores();
+}
+
+async function salvarItem(){
+  const produto=document.getElementById('produto').value;
+  const fornecedor=document.getElementById('fornecedor').value;
+  const valor=parseFloat(document.getElementById('valor').value);
+  if(!produto||!fornecedor||!valor) return alert("Preencha todos os campos");
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,fornecedor,valor})});
+  listarItens();
+}
+
+async function excluirItem(id){
+  if(!confirm("Excluir item?")) return;
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"excluirItem",id})});
+  listarItens();
+}
+
+function editarItem(id,produto,fornecedor,valor){
+  const novoValor = prompt("Novo valor:",valor);
+  if(!novoValor) return;
+  fetch(URL,{method:"POST",body:JSON.stringify({acao:"editarItem",id,produto,fornecedor,valor:parseFloat(novoValor)})}).then(listarItens);
+}
+
+/************ COTAÇÃO ************/
+async function abrirCotacao(){
+  document.getElementById("popupCotacao").style.display="flex";
+  const r = await fetch(`${URL}?acao=listarItens`);
+  const itens = await r.json();
+  const tbody = document.querySelector("#tabelaCotacao tbody");
+  tbody.innerHTML = itens.map(i=>`<tr><td>${i.produto}</td><td>${i.fornecedor}</td><td>R$${i.valor}</td></tr>`).join("");
+  const agrupado = {};
+  itens.forEach(i=>{
+    if(!agrupado[i.produto]||parseFloat(i.valor)<parseFloat(agrupado[i.produto].valor)) agrupado[i.produto]=i;
+  });
+  let res="<h4>💰 Fornecedores com menor preço:</h4>";
+  for(let p in agrupado) res+=`<div>${p}: <b>${agrupado[p].fornecedor}</b> (R$${agrupado[p].valor})</div>`;
+  document.getElementById("resultadoCotacao").innerHTML=res;
+}
+function fecharCotacao(){document.getElementById("popupCotacao").style.display="none";}
+
+carregarFornecedores();
+listarItens();
+</script>
+</body>
+</html>
