@@ -32,10 +32,10 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
 .item-card{background:#fff;padding:10px;border:1px solid #ddd;border-radius:var(--radius);margin-bottom:10px;}
 .item-card h4{margin:0 0 4px 0;}
 .relative{position:relative;}
-.modalidades-menu{position:absolute;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.15);padding:8px;border-radius:var(--radius);display:none;z-index:10;width:calc(100% - 20px);}
-.modalidades-menu button{display:block;width:100%;background:none;border:none;text-align:left;padding:8px;border-radius:8px;cursor:pointer;}
-.modalidades-menu button:hover{background:var(--blue);color:var(--white);}
-.unidade-linha{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+.menu-flutuante{position:absolute;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.15);padding:8px;border-radius:var(--radius);display:none;z-index:10;width:calc(100% - 20px);}
+.menu-flutuante button{display:block;width:100%;background:none;border:none;text-align:left;padding:8px;border-radius:8px;cursor:pointer;}
+.menu-flutuante button:hover{background:var(--blue);color:var(--white);}
+.unidade-linha{display:flex;gap:10px;align-items:center;margin-bottom:10px;position:relative;}
 .unidade-linha input{flex:1;}
 .unidade-linha button{padding:6px 10px;}
 #popup-unidades .popup-content button{width:100%;margin-bottom:6px;}
@@ -59,8 +59,8 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
 
     <div class="relative">
       <label>Modalidade</label>
-      <input id="modalidade" placeholder="Selecione a Modalidade" readonly onclick="abrirMenuModalidade()">
-      <div class="modalidades-menu" id="menuModalidades">
+      <input id="modalidade" placeholder="Selecione a Modalidade" readonly onclick="toggleMenu('menuModalidades')">
+      <div class="menu-flutuante" id="menuModalidades">
         <button onclick="setModalidade('Pregão Eletrônico')">Pregão Eletrônico</button>
         <button onclick="setModalidade('Dispensa de Licitação')">Dispensa de Licitação</button>
         <button onclick="setModalidade('Tomada de Preços')">Tomada de Preços</button>
@@ -115,8 +115,30 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
 
     <label>Unidades e Valores</label>
     <div id="unidadesContainer">
-      <div class="unidade-linha">
-        <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid">
+      <div class="unidade-linha relative">
+        <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid" readonly onclick="abrirMenuUnidades(this)">
+        <div class="menu-flutuante" id="menuUnidades">
+          <button onclick="setUnidade('PC')">PC</button>
+          <button onclick="setUnidade('CX')">CX</button>
+          <button onclick="setUnidade('FD')">FD</button>
+          <button onclick="setUnidade('KG')">KG</button>
+          <button onclick="setUnidade('G')">G</button>
+          <button onclick="setUnidade('UN')">UN</button>
+          <button onclick="setUnidade('LT')">LT</button>
+          <button onclick="setUnidade('ML')">ML</button>
+          <button onclick="setUnidade('MT')">MT</button>
+          <button onclick="setUnidade('PCT')">PCT</button>
+          <button onclick="setUnidade('SC')">SC</button>
+          <button onclick="setUnidade('DZ')">DZ</button>
+          <button onclick="setUnidade('PAR')">PAR</button>
+          <button onclick="setUnidade('JG')">JG</button>
+          <button onclick="setUnidade('ROLO')">ROLO</button>
+          <button onclick="setUnidade('PL')">PL</button>
+          <button onclick="setUnidade('TON')">TON</button>
+          <button onclick="setUnidade('SACO')">SACO</button>
+          <button onclick="setUnidade('BALDE')">BALDE</button>
+          <button onclick="setUnidade('M²')">M²</button>
+        </div>
         <input placeholder="Valor (R$)" class="valor" oninput="mascaraValor(this)">
         <button class="btn-blue" onclick="adicionarLinha()">+</button>
       </div>
@@ -137,20 +159,31 @@ button{padding:10px 16px;border:none;border-radius:var(--radius);cursor:pointer;
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const URL = "https://script.google.com/macros/s/AKfycbxAHXb_CVMyepJym0FJXX_tPY_zX3S79iLuj4sMFn0JstO4BAFOeDqkDXYIIQGioEBoFQ/exec";
-let fornecedores=[], todosItens=[], cotacaoItens=[], unidadesTemp=[];
+let fornecedores=[], todosItens=[], cotacaoItens=[], unidadesTemp=[], unidadeAtualInput=null;
 
 /* POPUPS */
 function abrirPopup(t){document.getElementById(`popup-${t}`).style.display='flex';}
 function fecharPopup(t){document.getElementById(`popup-${t}`).style.display='none';}
 
-/* MENU MODALIDADE */
-function abrirMenuModalidade(){
-  const menu=document.getElementById("menuModalidades");
-  menu.style.display=menu.style.display==="block"?"none":"block";
+/* MENU FLUTUANTE */
+function toggleMenu(id){
+  const m=document.getElementById(id);
+  m.style.display=m.style.display==="block"?"none":"block";
 }
-function setModalidade(v){
-  document.getElementById("modalidade").value=v;
-  document.getElementById("menuModalidades").style.display="none";
+
+/* MENU DE UNIDADES */
+function abrirMenuUnidades(input){
+  unidadeAtualInput=input;
+  const menu=document.getElementById("menuUnidades");
+  menu.style.display="block";
+  menu.style.top=input.offsetTop+40+"px";
+  menu.style.left=input.offsetLeft+"px";
+}
+function setUnidade(v){
+  if(unidadeAtualInput){
+    unidadeAtualInput.value=v;
+    document.getElementById("menuUnidades").style.display="none";
+  }
 }
 
 /* MÁSCARAS */
@@ -173,13 +206,13 @@ document.addEventListener("input", e=>{
   }
 });
 
-/* ADICIONAR LINHAS DE UNIDADE */
+/* ADICIONAR LINHAS */
 function adicionarLinha(){
   const cont=document.getElementById("unidadesContainer");
   const div=document.createElement("div");
-  div.className="unidade-linha";
+  div.className="unidade-linha relative";
   div.innerHTML=`
-    <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid">
+    <input placeholder="Unidade (Ex: PC, CX, KG)" class="unid" readonly onclick="abrirMenuUnidades(this)">
     <input placeholder="Valor (R$)" class="valor" oninput="mascaraValor(this)">
     <button class="btn-red" onclick="this.parentElement.remove()">-</button>`;
   cont.appendChild(div);
@@ -254,7 +287,7 @@ async function salvarItem(){
     const v=parseFloat(l.querySelector(".valor").value.replace(/[R$\.\s]/g,"").replace(",","."))||0;
     if(u && v) unidadesTexto+=`${u}=${v}\n`;
   });
-  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,fornecedor,quantidade:1,unidade:"",valor:0,unidades:unidadesTexto})});
+  await fetch(URL,{method:"POST",body:JSON.stringify({acao:"salvarItem",produto,fornecedor,unidades:unidadesTexto})});
   alert("Item cadastrado!");
   fecharPopup('item');
   listarItens();
@@ -280,7 +313,7 @@ function gerarPDF(){
 
   let y=46;
   cotacaoItens.forEach(i=>{
-    doc.text(`${i.item} - ${i.fornecedor} | ${i.quantidade} ${i.unidade} | R$ ${parseFloat(i.valor).toFixed(2).replace('.',',')}`,10,y);
+    doc.text(`${i.item} - ${i.fornecedor} | ${i.unidade} | R$ ${parseFloat(i.valor).toFixed(2).replace('.',',')}`,10,y);
     y+=6;
   });
   doc.save(`Cotacao_${nome}.pdf`);
